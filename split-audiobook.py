@@ -10,6 +10,10 @@
 Split a .m4b audiobook file into separate chapters.
 
 Usage: `uv run split-audiobook.py SomeAudiobook.m4b`
+
+Copyright 2025 Erik Swanson
+
+Licensed under the MIT license. See LICENSE for more info.
 """
 
 import click
