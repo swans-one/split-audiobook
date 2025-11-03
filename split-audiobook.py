@@ -20,8 +20,11 @@ import click
 import json
 import math
 import pathlib
+import re
 import subprocess
 
+def make_safe_title(title):
+    return re.sub(r'[^\w _-]', '', title)
 
 def make_chap_num_formatter(max_chapters):
     width = math.ceil(math.log(max_chapters + 1, 10))
@@ -34,11 +37,11 @@ def make_chap_num_formatter(max_chapters):
 
 def process_chapter(infile, outdir, chapter, i, fmt_chap):
     title = chapter.get("tags", {}).get("title", f"Chapter {i}")
-    safe_title = title
+    safe_title = make_safe_title(title)
     start = chapter["start_time"]
     end = chapter["end_time"]
     duration = "{:.6f}".format(float(end) - float(start))
-    outfile = outdir / f"{fmt_chap(i)} - {title}{infile.suffix}"
+    outfile = outdir / f"{fmt_chap(i)} - {safe_title}{infile.suffix}"
 
     cmd = [
         "ffmpeg",
