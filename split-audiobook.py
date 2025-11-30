@@ -27,6 +27,9 @@ def make_safe_title(title):
     return re.sub(r'[^\w _-]', '', title)
 
 def make_chap_num_formatter(max_chapters):
+    """Return a function which can do the appropriate amount of
+    padding based on how many total chapters there are
+    """
     width = math.ceil(math.log(max_chapters + 1, 10))
 
     def format_chap_num(i):
@@ -35,13 +38,21 @@ def make_chap_num_formatter(max_chapters):
     return format_chap_num
 
 
-def process_chapter(infile, outdir, chapter, i, fmt_chap):
+def process_chapter(infile, outdir, chapter, i, output_suffix, fmt_chap):
+    """Run an ffmpeg command to extract a single chapter from the
+    input file. Place it in the expected output directory.
+    """
     title = chapter.get("tags", {}).get("title", f"Chapter {i}")
     safe_title = make_safe_title(title)
     start = chapter["start_time"]
     end = chapter["end_time"]
     duration = "{:.6f}".format(float(end) - float(start))
-    outfile = outdir / f"{fmt_chap(i)} - {safe_title}{infile.suffix}"
+    suffix = (
+        '.' + output_suffix.strip('.')
+        if output_suffix is not None
+        else infile.suffix
+    )
+    outfile = outdir / f"{fmt_chap(i)} - {safe_title}{suffix}"
 
     cmd = [
         "ffmpeg",
@@ -69,7 +80,8 @@ def process_chapter(infile, outdir, chapter, i, fmt_chap):
 
 @click.command()
 @click.argument('filepath')
-def main(filepath) -> None:
+@click.option('-s', '--output-suffix')
+def main(filepath, output_suffix) -> None:
     infile = pathlib.Path(filepath).resolve()
     if not infile.is_file():
         raise ValueError("Provided path is not a file")
@@ -100,7 +112,7 @@ def main(filepath) -> None:
 
     print(f"Processing {len(chapters)} chapters")
     for i, chapter in enumerate(chapters, 1):
-        out = process_chapter(infile, outdir, chapter, i, fmt_chap_num)
+        out = process_chapter(infile, outdir, chapter, i, output_suffix, fmt_chap_num)
         if out is None:
             return
 
